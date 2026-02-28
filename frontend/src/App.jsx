@@ -1,6 +1,7 @@
 
-import { useState } from 'react'
-import * as XLSX from 'xlsx'
+import { useMemo, useState } from 'react'
+import { createColumnHelper, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table'
+import ExcelJS from 'exceljs'
 import './App.css'
 
 function App() {
@@ -10,7 +11,27 @@ function App() {
   const [missingColumns, setMissingColumns] = useState([])
   const [allMissingColumns, setAllMissingColumns] = useState([])
   const [showAllColumns, setShowAllColumns] = useState(false)
+  const [rawData, setRawData] = useState({ headers: [], rows: [] })
   const [uploadMessage, setUploadMessage] = useState('')
+
+  const previewColumns = useMemo(() => {
+    const previewColumnHelper = createColumnHelper()
+    return rawData.headers.map((header) =>
+      previewColumnHelper.accessor((row) => row?.[header] ?? '', {
+        id: header,
+        header: () => header,
+        cell: (info) => String(info.getValue() ?? ''),
+      }),
+    )
+  }, [rawData.headers])
+
+  const previewRows = useMemo(() => rawData.rows.slice(0, 10), [rawData.rows])
+
+  const previewTable = useReactTable({
+    data: previewRows,
+    columns: previewColumns,
+    getCoreRowModel: getCoreRowModel(),
+  })
 
 // Parsing functions for CSV, JSON, and Excel files
   const parseCSV = (text) => {
@@ -35,15 +56,57 @@ function App() {
     throw new Error('Invalid JSON format. Expected an array of objects.')
   }
 
-  const parseExcel = (arrayBuffer) => {
-    const workbook = XLSX.read(arrayBuffer, { type: 'array' })
-    const sheetName = workbook.SheetNames[0]
-    const sheet = workbook.Sheets[sheetName]
-    const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' })
+  const parseExcel = async (arrayBuffer) => {
+    const workbook = new ExcelJS.Workbook()
+    await workbook.xlsx.load(arrayBuffer)
+    const worksheet = workbook.worksheets[0]
+
+    if (!worksheet) {
+      throw new Error('Excel file is empty or has no worksheet.')
+    }
+
+    const headerRow = worksheet.getRow(1)
+    const headers = headerRow.values
+      .slice(1)
+      .map((value) => String(value ?? '').trim())
+
+    if (!headers.length || headers.every((header) => !header)) {
+      throw new Error('Excel file is missing a valid header row.')
+    }
+
+    const rows = []
+    worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber === 1) return
+
+      const rowData = {}
+      headers.forEach((header, index) => {
+        const cell = row.getCell(index + 1).value
+        if (cell === null || cell === undefined) {
+          rowData[header] = ''
+          return
+        }
+
+        if (typeof cell === 'object') {
+          if ('text' in cell && cell.text) {
+            rowData[header] = cell.text
+            return
+          }
+          if ('result' in cell && cell.result !== undefined && cell.result !== null) {
+            rowData[header] = String(cell.result)
+            return
+          }
+        }
+
+        rowData[header] = String(cell)
+      })
+
+      rows.push(rowData)
+    })
+
     if (!rows.length) {
       throw new Error('Excel file is empty or has no usable rows.')
     }
-    const headers = Object.keys(rows[0])
+
     return { headers, rows }
   }
 // Function to calculate health score and missing values statistics
@@ -83,6 +146,7 @@ function App() {
 
     return { health, missingData, allMissing }
   }
+  
 // Main function to handle file uploads and trigger parsing and analysis
   const handleFiles = async (files) => {
     const nextFile = files && files[0]
@@ -100,6 +164,7 @@ function App() {
         setMissingColumns([])
         setAllMissingColumns([])
         setShowAllColumns(false)
+        setRawData({ headers: [], rows: [] })
         setUploadMessage('Image received. Image analysis is not supported yet.')
         return
       }
@@ -112,7 +177,7 @@ function App() {
         parsed = parseJSON(text)
       } else if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
         const buffer = await nextFile.arrayBuffer()
-        parsed = parseExcel(buffer)
+        parsed = await parseExcel(buffer)
       } else {
         throw new Error('Unsupported file type. Please upload CSV, JSON, or Excel.')
       }
@@ -122,6 +187,7 @@ function App() {
       setMissingColumns(stats.missingData)
       setAllMissingColumns(stats.allMissing)
       setShowAllColumns(false)
+      setRawData(parsed)
     } catch (error) {
       console.error('Error parsing file:', error)
       alert(`Error: ${error.message}`)
@@ -129,6 +195,7 @@ function App() {
       setMissingColumns([])
       setAllMissingColumns([])
       setShowAllColumns(false)
+      setRawData({ headers: [], rows: [] })
       setUploadMessage('')
     }
   }
@@ -229,9 +296,12 @@ function App() {
               {showAllColumns ? 'Show Top 5 Columns' : 'View All Columns'}
             </button>
           )}
+          <div className="panel-note">
+            This analysis identifies which columns have the most missing data, helping you prioritize cleaning efforts.
+          </div>
+          
+      
         </section>
-
-        
       </main>
 
       {}
