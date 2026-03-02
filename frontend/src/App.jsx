@@ -1,7 +1,8 @@
 
 import { useMemo, useState } from 'react'
 import { createColumnHelper, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table'
-import ExcelJS from 'exceljs'
+import { applyLocalOperations, calculateStats } from './components/dataCleaning'
+import { parseCSV, parseJSON, parseExcel } from './components/parsers'
 import './App.css'
 
 function App() {
@@ -18,6 +19,8 @@ function App() {
   const [isPreviewLoading, setIsPreviewLoading] = useState(false)
   const [previewError, setPreviewError] = useState('')
   const [previewNotice, setPreviewNotice] = useState('')
+    const [exportMessage, setExportMessage] = useState('')
+  const [lastExportName, setLastExportName] = useState('')
 
   const cleaningOperations = [
     {
@@ -41,147 +44,8 @@ function App() {
       description: 'Estimate missing values based on correlations and patterns in the data',
     },
   ]
-  // Set of markers that indicate missing values in the dataset 
-  const missingMarkers = new Set(['', 'na', 'n/a', 'nan', 'null', 'none', 'undefined', '-', '--'])
-
-  // Helper function to determine if a value should be considered missing
-  const isMissingValue = (value) => {
-    if (value === null || value === undefined) return true
-    const normalized = String(value).trim().toLowerCase()
-    return missingMarkers.has(normalized)
-  }
-  // Helper function to convert a value to a numeric type if possible, otherwise return null
-  const toNumeric = (value) => {
-    if (typeof value === 'number' && Number.isFinite(value)) return value
-    if (isMissingValue(value)) return null
-    const parsed = Number(String(value).replace(/,/g, '').trim())
-    return Number.isFinite(parsed) ? parsed : null
-  }
-  // Function to find the most frequent non-missing value in an array, used for filling missing categorical data
-  const getMostFrequentValue = (values) => {
-    const countMap = new Map()
-    let bestValue = values[0]
-    let bestCount = 0
-    // Count occurrences of each value, ignoring case and whitespace
-    values.forEach((value) => {
-      const key = String(value).trim().toLowerCase()
-      const current = countMap.get(key) || { count: 0, value }
-      const next = { count: current.count + 1, value: current.value }
-      countMap.set(key, next)
-      if (next.count > bestCount) {
-        bestCount = next.count
-        bestValue = next.value
-      }
-    })
-
-    return bestValue
-  }
-  // Function to fill missing numeric values with the mean of the column
-  const applyLocalFillMissingMean = (rows, headers) => {
-    const nextRows = rows.map((row) => ({ ...row }))
-    headers.forEach((header) => {
-      const numericValues = nextRows
-        .map((row) => toNumeric(row[header]))
-        .filter((value) => value !== null)
-
-      if (!numericValues.length) 
-        return
-      // Calculate the mean of the numeric values in the column
-      const mean = numericValues.reduce((sum, value) => sum + value, 0) / numericValues.length
-      // Fill missing values with the calculated mean, rounded to 2 decimal places
-      nextRows.forEach((row) => {
-        if (isMissingValue(row[header])) {
-          row[header] = Number(mean.toFixed(2))
-        }
-      })
-    })
-
-    return nextRows
-  }
-  // Function to fill missing numeric values with the median of the column
-  const applyLocalFillMissingMedian = (rows, headers) => {
-    const nextRows = rows.map((row) => ({ ...row }))
-    headers.forEach((header) => {
-      const numericValues = nextRows
-        .map((row) => toNumeric(row[header]))
-        .filter((value) => value !== null)
-        .sort((a, b) => a - b)
-      // Calculate the median of the numeric values in the column
-      if (!numericValues.length) return
-
-      const mid = Math.floor(numericValues.length / 2)
-      const median =
-        numericValues.length % 2 === 0
-          ? (numericValues[mid - 1] + numericValues[mid]) / 2
-          : numericValues[mid]
-      // Fill missing values with the calculated median, rounded to 2 decimal places
-      nextRows.forEach((row) => {
-        if (isMissingValue(row[header])) {
-          row[header] = Number(median.toFixed(2))
-        }
-      })
-    })
-
-    return nextRows
-  }
-  // Function to fill any remaining missing values with 'Unknown' for categorical data or
-  //  the mean for numeric data, based on the non-missing values in the column
-  const applyLocalFillRemainingMissing = (rows, headers) => {
-    const nextRows = rows.map((row) => ({ ...row }))
-
-    // For each column, determine the appropriate replacement for missing values
-    // based on the non-missing data
-    headers.forEach((header) => {
-      const nonMissingValues = nextRows
-        .map((row) => row[header])
-        .filter((value) => !isMissingValue(value))
-
-      // Default replacement is 'Unknown' for categorical data, 
-      // but if all non-missing values are numeric, use the mean instead
-      let replacement = 'Unknown'
-
-      // Check if there are any non-missing values to determine the replacement strategy
-      if (nonMissingValues.length > 0) {
-        const numericValues = nonMissingValues
-          .map((value) => toNumeric(value))
-          .filter((value) => value !== null)
-        // If all non-missing values are numeric, calculate the mean for replacement
-        if (numericValues.length === nonMissingValues.length) {
-          const mean = numericValues.reduce((sum, value) => sum + value, 0) / numericValues.length
-          replacement = Number(mean.toFixed(2))
-        } else {
-          replacement = getMostFrequentValue(nonMissingValues)
-        }
-      }
-      // Fill any remaining missing values in the column with the determined replacement
-      nextRows.forEach((row) => {
-        if (isMissingValue(row[header])) {
-          row[header] = replacement
-        }
-      })
-    })
-
-    return nextRows
-  }
-
-  // Function to apply selected cleaning operations locally in the browser as a fallback if 
-  // backend preview fails
-  const applyLocalOperations = (headers, rows, operations) => {
-    let cleanedRows = rows.map((row) => ({ ...row }))
-    // Apply operations in a logical order: mean/median filling first
-    if (operations.includes('fill-missing-mean') || operations.includes('value-prediction')) {
-      cleanedRows = applyLocalFillMissingMean(cleanedRows, headers)
-    }
-    // Median filling is applied after mean filling to handle any remaining missing values,
-    if (operations.includes('fill-missing-median') || operations.includes('estimates-values')) {
-      cleanedRows = applyLocalFillMissingMedian(cleanedRows, headers)
-    }
-    // fill any remaining missing values with 'Unknown' or mean based on the column data type
-    cleanedRows = applyLocalFillRemainingMissing(cleanedRows, headers)
-
-    return cleanedRows
-  }
-
+  
+  
   // Function to fetch preview data from the backend after applying cleaning operations
   const fetchPreviewData = async () => {
     if (!rawData.headers.length || !rawData.rows.length) {
@@ -292,119 +156,6 @@ function App() {
     getCoreRowModel: getCoreRowModel(),
   })
 
-// Parsing functions for CSV, JSON, and Excel files
-  const parseCSV = (text) => {
-    const lines = text.trim().split('\n')
-    const headers = lines[0].split(',').map((h) => h.trim())
-    const rows = lines.slice(1).map((line) => {
-      const values = line.split(',').map((v) => v.trim())
-      return headers.reduce((obj, header, index) => {
-        obj[header] = values[index] || null
-        return obj
-      }, {})
-    })
-    return { headers, rows }
-  }
-
-  const parseJSON = (text) => {
-    const data = JSON.parse(text)
-    if (Array.isArray(data) && data.length > 0) {
-      const headers = Object.keys(data[0])
-      return { headers, rows: data }
-    }
-    throw new Error('Invalid JSON format. Expected an array of objects.')
-  }
-
-  const parseExcel = async (arrayBuffer) => {
-    const workbook = new ExcelJS.Workbook()
-    await workbook.xlsx.load(arrayBuffer)
-    const worksheet = workbook.worksheets[0]
-
-    if (!worksheet) {
-      throw new Error('Excel file is empty or has no worksheet.')
-    }
-
-    const headerRow = worksheet.getRow(1)
-    const headers = headerRow.values
-      .slice(1)
-      .map((value) => String(value ?? '').trim())
-
-    if (!headers.length || headers.every((header) => !header)) {
-      throw new Error('Excel file is missing a valid header row.')
-    }
-
-    const rows = []
-    worksheet.eachRow((row, rowNumber) => {
-      if (rowNumber === 1) return
-
-      const rowData = {}
-      headers.forEach((header, index) => {
-        const cell = row.getCell(index + 1).value
-        if (cell === null || cell === undefined) {
-          rowData[header] = ''
-          return
-        }
-
-        if (typeof cell === 'object') {
-          if ('text' in cell && cell.text) {
-            rowData[header] = cell.text
-            return
-          }
-          if ('result' in cell && cell.result !== undefined && cell.result !== null) {
-            rowData[header] = String(cell.result)
-            return
-          }
-        }
-
-        rowData[header] = String(cell)
-      })
-
-      rows.push(rowData)
-    })
-
-    if (!rows.length) {
-      throw new Error('Excel file is empty or has no usable rows.')
-    }
-
-    return { headers, rows }
-  }
-// Function to calculate health score and missing values statistics
-  const calculateStats = (headers, rows) => {
-    const totalCells = headers.length * rows.length
-    let filledCells = 0
-    const columnMissing = {}
-
-    headers.forEach((header) => {
-      columnMissing[header] = 0
-    })
-    
-    rows.forEach((row) => {
-      headers.forEach((header) => {
-        const value = row[header]
-        if (!isMissingValue(value)) {
-          filledCells++
-        } else {
-          columnMissing[header]++
-        }
-      })
-    })
-
-    const health = totalCells > 0 ? Math.round((filledCells / totalCells) * 100) : 0
-
-    const colors = ['var(--accent-blue)', 'var(--accent-amber)', 'var(--accent-rose)', 'var(--accent-green)']
-    const allMissing = headers
-      .map((header, index) => ({
-        label: header,
-        value: rows.length > 0 ? Math.round((columnMissing[header] / rows.length) * 100) : 0,
-        color: colors[index % colors.length],
-      }))
-      .filter((item) => item.value > 0)
-      .sort((a, b) => b.value - a.value)
-
-    const missingData = allMissing.slice(0, 5)
-
-    return { health, missingData, allMissing }
-  }
   
 // Main function to handle file uploads and trigger parsing and analysis
   const handleFiles = async (files) => {
@@ -485,6 +236,77 @@ function App() {
         : [...prev, operationId]
     )
   }
+
+    const getCleanedDataset = () => {
+    // Prefer previewData when it exists, because that’s your cleaned output
+    if (previewData?.headers?.length && previewData?.rows?.length) return previewData
+    return null
+  }
+
+  const buildExportBaseName = () => {
+    const original = selectedFile?.name || 'data'
+    const base = original.replace(/\.[^/.]+$/, '') // remove extension
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-') // YYYY-MM-DD-HH-MM-SS
+    return `${base}_cleaned_${timestamp}`
+  }
+
+  const escapeCsvCell = (value) => {
+    const s = value === null || value === undefined ? '' : String(value)
+    // Wrap in quotes if it contains comma, quote, or newline
+    if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`
+    return s
+  }
+
+  const toCSV = (headers, rows) => {
+    const headerLine = headers.map(escapeCsvCell).join(',')
+    const lines = rows.map((row) => headers.map((h) => escapeCsvCell(row?.[h])).join(','))
+    return [headerLine, ...lines].join('\n')
+  }
+
+  const downloadBlob = (blob, filename) => {
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+  }
+
+  const handleExportCSV = () => {
+    const cleaned = getCleanedDataset()
+    if (!cleaned) {
+      setExportMessage('Generate a cleaned preview first (click “Apply Smart Fixes”).')
+      return
+    }
+
+    const baseName = buildExportBaseName()
+    const csv = toCSV(cleaned.headers, cleaned.rows)
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+
+    downloadBlob(blob, `${baseName}.csv`)
+    setLastExportName(`${baseName}.csv`)
+    setExportMessage('Downloaded cleaned CSV successfully.')
+  }
+
+  const handleExportJSON = () => {
+    const cleaned = getCleanedDataset()
+    if (!cleaned) {
+      setExportMessage('Generate a cleaned preview first (click “Apply Smart Fixes”).')
+      return
+    }
+
+    const baseName = buildExportBaseName()
+    const json = JSON.stringify(cleaned.rows, null, 2)
+    const blob = new Blob([json], { type: 'application/json;charset=utf-8' })
+
+    downloadBlob(blob, `${baseName}.json`)
+    setLastExportName(`${baseName}.json`)
+    setExportMessage('Downloaded cleaned JSON successfully.')
+  }
+
+  
   return (
     <div className="app">
       <header className="topbar">
@@ -612,6 +434,69 @@ function App() {
             </div>
           )}
         </section>
+        {/* Export Panel - After Missing Values Section */}
+{previewData?.rows?.length > 0 && (
+  <section className="panel preview">
+    <div className="panel-header">
+      <h2>Export Cleaned File</h2>
+<span className="badge">
+  Cleaned dataset is ready for export. Choose your preferred format below.
+</span>
+    </div>
+
+    <p className="subtle">
+      Download your cleaned dataset as a modern export file. CSV is widely compatible, while JSON preserves complex structures. The exported file will include all applied cleaning operations and a timestamp in the filename for easy reference.
+    </p>
+
+    <div className="chip-grid">
+      <div className="chip chip-blue">
+        <strong>Rows</strong>
+        <span>{previewData?.rows?.length}</span>
+      </div>
+
+      <div className="chip chip-green">
+        <strong>Columns</strong>
+        <span>{previewData?.headers?.length}</span>
+      </div>
+
+      <div className="chip chip-amber">
+        <strong>Operations</strong>
+        <span>{selectedOperations.length}</span>
+      </div>
+    </div>
+
+    <div className="export-actions" style={{ marginTop: 16 }}>
+      <button
+        className="export-button"
+        onClick={handleExportCSV}
+      >
+        Download CSV
+      </button>
+
+      <button
+        className="export-button"
+        onClick={handleExportJSON}
+      >
+        Download JSON
+      </button>
+
+      {lastExportName && (
+        <div
+          className="toast"
+          onClick={() => navigator.clipboard?.writeText(lastExportName)}
+        >
+          Saved: <strong style={{ marginLeft: 6 }}>{lastExportName}</strong>
+        </div>
+      )}
+    </div>
+
+    {exportMessage && (
+      <div className="preview-loading" style={{ marginTop: 12 }}>
+        {exportMessage}
+      </div>
+    )}
+  </section>
+)}
 
         {rawData.headers.length > 0 && (
           <section className="panel cleaning-config">
