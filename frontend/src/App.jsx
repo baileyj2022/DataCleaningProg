@@ -14,6 +14,8 @@ function App() {
   const [showAllColumns, setShowAllColumns] = useState(false)
   const [rawData, setRawData] = useState({ headers: [], rows: [] })
   const [uploadMessage, setUploadMessage] = useState('')
+  const [uploadLoading, setUploadLoading] = useState(false)
+  const [uploadError, setUploadError] = useState('')
   const [selectedOperations, setSelectedOperations] = useState([])
   const [previewData, setPreviewData] = useState(null)
   const [isPreviewLoading, setIsPreviewLoading] = useState(false)
@@ -174,6 +176,8 @@ function App() {
     if (!nextFile) 
       return
 
+    setUploadLoading(true)
+    setUploadError('')
     setSelectedFile(nextFile)
     setUploadMessage('')
     // Reset previous state when a new file is uploaded
@@ -188,6 +192,7 @@ function App() {
         setShowAllColumns(false)
         setRawData({ headers: [], rows: [] })
         setUploadMessage('Image received. Image analysis is not supported yet.')
+        setUploadLoading(false)
         return
       }
       // parsing logic for CSV, JSON, Excel files
@@ -214,21 +219,24 @@ function App() {
       setPreviewSummary(null)
       setPreviewError('')
       setPreviewNotice('')
+      setUploadLoading(false)
     } catch (error) {
       console.error('Error parsing file:', error)
-      alert(`Error: ${error.message}`)
+      setUploadError(error.message || 'Failed to process file.')
+      setUploadMessage('')
       setHealthScore(null)
       setMissingColumns([])
       setAllMissingColumns([])
       setShowAllColumns(false)
       setRawData({ headers: [], rows: [] })
-      setUploadMessage('')
+      setUploadLoading(false)
     }
   }
 // Drag-and-drop event handlers
   const onDrop = (event) => {
     event.preventDefault()
     setIsDragOver(false)
+    if (uploadLoading) return
     handleFiles(event.dataTransfer.files)
   }
 
@@ -350,6 +358,7 @@ function App() {
               type="file"
               accept=".csv,.json,.xlsx,.xls,.jpg,.jpeg"
               onChange={(event) => handleFiles(event.target.files)}
+              disabled={uploadLoading}
             />
           </div>
           <div className="file-meta">
@@ -357,6 +366,8 @@ function App() {
             <span>{selectedFile ? `${Math.round(selectedFile.size / 1024)} KB` : 'Waiting for upload'}</span>
           </div>
           {uploadMessage && <p className="file-note">{uploadMessage}</p>}
+          {uploadLoading && <div className="upload-loading">Processing file...</div>}
+          {uploadError && <div className="upload-error">{uploadError}</div>}
         </section>
 
         <section className="panel health">
