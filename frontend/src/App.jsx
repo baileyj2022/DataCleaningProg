@@ -19,6 +19,7 @@ function App() {
   const [isPreviewLoading, setIsPreviewLoading] = useState(false)
   const [previewError, setPreviewError] = useState('')
   const [previewNotice, setPreviewNotice] = useState('')
+  const [previewSummary, setPreviewSummary] = useState(null)
     const [exportMessage, setExportMessage] = useState('')
   const [lastExportName, setLastExportName] = useState('')
 
@@ -61,6 +62,7 @@ function App() {
     setIsPreviewLoading(true)
     setPreviewError('')
     setPreviewNotice('')
+    setPreviewSummary(null)
 
     // Attempt to fetch cleaned preview data from the backend API
     try {
@@ -86,14 +88,22 @@ function App() {
         setPreviewError(`Backend error: ${data.error}`)
         return
       }
-      
+
       setPreviewData(data)
-      if (data.headers?.length && data.rows?.length) {
+      // if the backend sent a summary, use it directly; otherwise compute local stats
+      if (data.summary) {
+        setPreviewSummary(data.summary)
+        setRawData({ headers: data.headers, rows: data.rows })
+        setHealthScore(data.summary.health)
+        setMissingColumns(data.summary.missingData)
+        setAllMissingColumns(data.summary.allMissing)
+      } else if (data.headers?.length && data.rows?.length) {
         const cleanedStats = calculateStats(data.headers, data.rows)
         setRawData({ headers: data.headers, rows: data.rows })
         setHealthScore(cleanedStats.health)
         setMissingColumns(cleanedStats.missingData)
         setAllMissingColumns(cleanedStats.allMissing)
+        setPreviewSummary(cleanedStats)
       }
       setPreviewNotice('Preview generated using backend API.')
     } catch (error) {
@@ -118,6 +128,7 @@ function App() {
           setHealthScore(cleanedStats.health)
           setMissingColumns(cleanedStats.missingData)
           setAllMissingColumns(cleanedStats.allMissing)
+          setPreviewSummary(cleanedStats)
         }
         // Set a notice to inform the user that the preview was generated using the local fallback method
         setPreviewNotice('Showing local preview generated in browser.')
@@ -200,6 +211,7 @@ function App() {
       setShowAllColumns(false)
       setRawData(parsed)
       setPreviewData(null)
+      setPreviewSummary(null)
       setPreviewError('')
       setPreviewNotice('')
     } catch (error) {
@@ -409,6 +421,28 @@ function App() {
                   Preview of {previewData.rows.length} cleaned row{previewData.rows.length !== 1 ? 's' : ''}
                 </div>
               )}
+
+              {previewSummary && (
+                <div className="summary-card">
+                  <h4>Data Issue Summary</h4>
+                  <p>
+                    <strong>Health score:</strong> {previewSummary.health}%
+                  </p>
+                  {previewSummary.missingData && previewSummary.missingData.length > 0 && (
+                    <div className="missing-list">
+                      <strong>Top missing columns:</strong>
+                      <ul>
+                        {previewSummary.missingData.map((item) => (
+                          <li key={item.label}>
+                            {item.label}: {item.value}%
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="table-container">
                 <table className="preview-table">
                   <thead>
