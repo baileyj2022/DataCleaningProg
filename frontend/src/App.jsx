@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Routes, Route } from 'react-router-dom'
+import { Toaster, toast } from 'react-hot-toast'
 import { applyLocalOperations, calculateStats } from './components/dataCleaning'
 import { UploadScreen } from './screens/UploadScreen'
 import { ConfigureScreen } from './screens/ConfigureScreen'
@@ -11,7 +12,7 @@ function App() {
   const [isDragOver, setIsDragOver] = useState(false)
   const [selectedFile, setSelectedFile] = useState(null)
   const [healthScore, setHealthScore] = useState(null)
-  const [missingColumns, setMissingColumns] = useState([])
+  const [ , setMissingColumns] = useState([])
   const [allMissingColumns, setAllMissingColumns] = useState([])
   const [showAllColumns, setShowAllColumns] = useState(false)
   const [rawData, setRawData] = useState({ headers: [], rows: [] })
@@ -53,11 +54,13 @@ function App() {
   const fetchPreviewData = async () => {
     if (!rawData.headers.length || !rawData.rows.length) {
       setPreviewError('Please upload data first.')
+      toast.error('Please upload data first.')
       return
     }
     
     if (!selectedOperations.length) {
       setPreviewError('Please select at least one cleaning operation.')
+      toast.error('Please select at least one cleaning operation.')
       return
     }
 
@@ -88,6 +91,7 @@ function App() {
       
       if (data.error) {
         setPreviewError(`Backend error: ${data.error}`)
+        toast.error(`Cleaning failed: ${data.error}`)
         return
       }
 
@@ -108,6 +112,7 @@ function App() {
         setPreviewSummary(cleanedStats)
       }
       setPreviewNotice('Preview generated using backend API.')
+      toast.success('Cleaning completed successfully.')
     } catch (error) {
       console.error('Error fetching preview data:', error)
       // If backend preview fails, attempt to apply cleaning operations locally in the browser
@@ -134,8 +139,10 @@ function App() {
         }
         // Set a notice to inform the user that the preview was generated using the local fallback method
         setPreviewNotice('Showing local preview generated in browser.')
+        toast.success('Cleaning completed successfully (local preview).')
       } catch (fallbackError) {
         setPreviewError(`Error fetching preview: ${fallbackError.message}`)
+        toast.error(`Cleaning failed: ${fallbackError.message}`)
         console.error('Fallback preview failed:', fallbackError)
       }
     } finally {
@@ -199,6 +206,7 @@ function App() {
     downloadBlob(blob, `${baseName}.csv`)
     setLastExportName(`${baseName}.csv`)
     setExportMessage('Downloaded cleaned CSV successfully.')
+    toast.success('Downloaded cleaned CSV successfully.')
   }
 
   const handleExportJSON = () => {
@@ -215,11 +223,12 @@ function App() {
     downloadBlob(blob, `${baseName}.json`)
     setLastExportName(`${baseName}.json`)
     setExportMessage('Downloaded cleaned JSON successfully.')
+    toast.success('Downloaded cleaned JSON successfully.')
   }
 
-  
   return (
     <div className="app">
+      <Toaster position="top-right" toastOptions={{ duration: 3500 }} />
       <Routes>
         <Route
           path="/"
