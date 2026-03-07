@@ -139,7 +139,7 @@ function App() {
         }
         // Set a notice to inform the user that the preview was generated using the local fallback method
         setPreviewNotice('Showing local preview generated in browser.')
-        toast.success('Cleaning completed successfully (local preview).')
+        toast.success('Cleaning completed successfully, seen in preview.')
       } catch (fallbackError) {
         setPreviewError(`Error fetching preview: ${fallbackError.message}`)
         toast.error(`Cleaning failed: ${fallbackError.message}`)
