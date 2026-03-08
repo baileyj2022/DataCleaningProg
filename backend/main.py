@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.responses import Response
 from fastapi.middleware.cors import CORSMiddleware
 from db import db
+<<<<<<< HEAD
 from pydantic import BaseModel
 from typing import List, Dict, Any
 from datetime import datetime
@@ -16,8 +17,16 @@ except Exception:
 
 # helper logic for cleaning and summary
 from services.cleaner import calculate_summary, apply_operations
+=======
+from routes.preview import router as preview_router
+from routes.clean import router as clean_router
+
+
+>>>>>>> 19f8904 (Created the Export Endpoint)
 
 app = FastAPI()
+app.include_router(preview_router)
+app.include_router(clean_router) 
 
 app.add_middleware(
     CORSMiddleware,

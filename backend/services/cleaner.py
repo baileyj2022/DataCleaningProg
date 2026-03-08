@@ -53,3 +53,24 @@ def apply_operations(headers: List[str], rows: List[Dict[str, Any]], operations:
     """
     # no modifications for now
     return rows
+import pandas as pd
+
+def run_cleaning_pipeline(df: pd.DataFrame, config: dict):
+    report = {}
+
+    if config.get("remove_duplicates"):
+        before = len(df)
+        df = df.drop_duplicates()
+        report["duplicates_removed"] = before - len(df)
+
+    if config.get("remove_empty_rows"):
+        before = len(df)
+        df = df.dropna(how="all")
+        report["empty_rows_removed"] = before - len(df)
+
+    if config.get("remove_empty_columns"):
+        before = len(df.columns)
+        df = df.dropna(axis=1, how="all")
+        report["empty_columns_removed"] = before - len(df.columns)
+
+    return df, report

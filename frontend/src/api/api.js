@@ -156,3 +156,17 @@ export async function clearJobHistoryEverywhere() {
 		// Browser history is already cleared; backend can be unavailable.
 	}
 }
+import axios from 'axios';
+
+const API = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'
+});
+
+export const uploadFile = async (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const response = await API.post('/upload', formData);
+  return response.data;
+};
+
+export default API;
