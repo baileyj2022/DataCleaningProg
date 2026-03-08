@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, useNavigate } from 'react-router-dom'
 import { Toaster, toast } from 'react-hot-toast'
 import { applyLocalOperations, calculateStats } from './components/dataCleaning'
 import { UploadScreen } from './screens/UploadScreen'
@@ -50,6 +50,27 @@ function App() {
       description: 'Estimate missing values based on correlations and patterns in the data',
     },
   ]
+  // function to add the navigation flow that guides the user step by step
+const navigate = useNavigate()
+
+const navigateFlow = () => {
+  if (!selectedFile) {
+    navigate('/')
+    toast.error('Please upload a file first.')
+    return
+  }
+  if (rawData.headers.length === 0 || rawData.rows.length === 0) {
+    navigate('/')
+    toast.error('No data loaded. Please upload a valid file first.')
+    return
+  }
+  if (selectedOperations.length === 0) {
+    navigate('/configure')
+    toast.error('Please select at least one cleaning operation.')
+    return
+  }
+  navigate('/preview')
+}
 
   const fetchPreviewData = async () => {
     if (!rawData.headers.length || !rawData.rows.length) {
@@ -234,6 +255,7 @@ function App() {
           path="/"
           element={
             <UploadScreen
+              navigateFlow={navigateFlow}
               selectedFile={selectedFile}
               setSelectedFile={setSelectedFile}
               isDragOver={isDragOver}
