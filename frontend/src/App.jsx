@@ -92,7 +92,7 @@ const navigateFlow = () => {
 
     // Attempt to fetch cleaned preview data from the backend API
     try {
-      const response = await fetch('http://localhost:8000/preview', {
+      const response = await fetch('/api/preview', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -134,10 +134,8 @@ const navigateFlow = () => {
       }
       setPreviewNotice('Preview generated using backend API.')
       toast.success('Cleaning completed successfully.')
-    } catch (error) {
-      console.error('Error fetching preview data:', error)
-      // If backend preview fails, attempt to apply cleaning operations locally in the browser
-      // as a fallback
+    } catch {
+      // Silently fall back to local preview for connection errors
       try {
         const fallbackRows = applyLocalOperations(rawData.headers, rawData.rows, selectedOperations)
         const fallbackResult = {
@@ -162,7 +160,7 @@ const navigateFlow = () => {
         setPreviewNotice('Showing local preview generated in browser.')
         toast.success('Cleaning completed successfully, seen in preview.')
       } catch (fallbackError) {
-        setPreviewError(`Error fetching preview: ${fallbackError.message}`)
+        setPreviewError(`Error: ${fallbackError.message}`)
         toast.error(`Cleaning failed: ${fallbackError.message}`)
         console.error('Fallback preview failed:', fallbackError)
       }
