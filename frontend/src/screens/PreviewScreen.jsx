@@ -13,6 +13,30 @@ export function PreviewScreen({
   setShowAllColumns,
 }) {
   const navigate = useNavigate()
+  const displayHeaders = previewData?.headers || []
+  const displayRows = previewData?.rows || []
+  const operationsApplied = previewData?.operations_applied || []
+
+  const previewColumnHelper = useMemo(() => createColumnHelper(), [])
+  const previewColumns = useMemo(() => {
+    return displayHeaders.map((header) =>
+      previewColumnHelper.accessor((row) => row?.[header] ?? '', {
+        id: header,
+        header: () => header,
+        cell: (info) => String(info.getValue() ?? ''),
+      }),
+    )
+  }, [displayHeaders, previewColumnHelper])
+
+  const previewTable = useReactTable({
+    data: displayRows,
+    columns: previewColumns,
+    getCoreRowModel: getCoreRowModel(),
+  })
+
+  const originalRowCount = previewData?.original_row_count ?? displayRows.length
+  const cleanedRowCount = previewData?.preview_row_count ?? displayRows.length
+  const removedRowCount = Math.max(originalRowCount - cleanedRowCount, 0)
 
   if (!previewData?.rows?.length) {
     return (
@@ -32,28 +56,6 @@ export function PreviewScreen({
       </div>
     )
   }
-
-  const displayHeaders = previewData?.headers || []
-  const displayRows = previewData?.rows || []
-
-  const previewColumnHelper = createColumnHelper()
-  const previewColumns = useMemo(() => {
-    return displayHeaders.map((header) =>
-      previewColumnHelper.accessor((row) => row?.[header] ?? '', {
-        id: header,
-        header: () => header,
-        cell: (info) => String(info.getValue() ?? ''),
-      }),
-    )
-  }, [displayHeaders])
-
-  const previewRowsSliced = useMemo(() => displayRows.slice(0, 10), [displayRows])
-
-  const previewTable = useReactTable({
-    data: previewRowsSliced,
-    columns: previewColumns,
-    getCoreRowModel: getCoreRowModel(),
-  })
 
   return (
     <div className="screen preview-screen">
@@ -103,30 +105,61 @@ export function PreviewScreen({
           {previewNotice && !isPreviewLoading && <div className="preview-loading">{previewNotice}</div>}
           {previewData?.rows && !isPreviewLoading && (
             <div className="preview-success">
-              Preview of {previewData.rows.length} cleaned row{previewData.rows.length !== 1 ? 's' : ''}
+              Showing {previewData.rows.length} cleaned row{previewData.rows.length !== 1 ? 's' : ''}
             </div>
           )}
 
-          {previewSummary && (
-            <div className="summary-card">
-              <h4>Data Issue Summary</h4>
+          <div className="summary-card">
+            <h4>Cleaning Summary Report</h4>
+            <div className="summary-grid">
+              <p>
+                <strong>Rows before:</strong> {originalRowCount}
+              </p>
+              <p>
+                <strong>Rows after:</strong> {cleanedRowCount}
+              </p>
+              <p>
+                <strong>Rows removed:</strong> {removedRowCount}
+              </p>
+              <p>
+                <strong>Columns:</strong> {displayHeaders.length}
+              </p>
+            </div>
+
+            {previewSummary && (
               <p>
                 <strong>Health score:</strong> {previewSummary.health}%
               </p>
-              {previewSummary.missingData && previewSummary.missingData.length > 0 && (
-                <div className="missing-list">
-                  <strong>Top missing columns:</strong>
-                  <ul>
-                    {previewSummary.missingData.map((item) => (
-                      <li key={item.label}>
-                        {item.label}: {item.value}%
-                      </li>
-                    ))}
-                  </ul>
+            )}
+
+            <div className="summary-ops">
+              <strong>Operations applied:</strong>
+              {operationsApplied.length > 0 ? (
+                <div className="operation-tags">
+                  {operationsApplied.map((operation) => (
+                    <span className="badge" key={operation}>
+                      {operation}
+                    </span>
+                  ))}
                 </div>
+              ) : (
+                <p>No operations listed.</p>
               )}
             </div>
-          )}
+
+            {previewSummary?.missingData?.length > 0 && (
+              <div className="missing-list">
+                <strong>Top missing columns:</strong>
+                <ul>
+                  {previewSummary.missingData.map((item) => (
+                    <li key={item.label}>
+                      {item.label}: {item.value}%
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
 
           <div className="table-container">
             <table className="preview-table">

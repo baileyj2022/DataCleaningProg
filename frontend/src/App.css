@@ -396,6 +396,24 @@
   font-size: 13px;
 }
 
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 14px;
+  margin-bottom: 8px;
+}
+
+.summary-ops {
+  margin-top: 8px;
+}
+
+.operation-tags {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .summary-card ul {
   margin: 4px 0 0 16px;
   padding: 0;
