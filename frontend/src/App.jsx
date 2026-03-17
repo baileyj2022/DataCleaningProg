@@ -141,7 +141,17 @@ const navigateFlow = () => {
     return `${base}`
   }
 
-  const BACKEND_BASE_URL = 'http://127.0.0.1:8000'
+  const escapeCsvCell = (value) => {
+    const s = value === null || value === undefined ? '' : String(value)
+    if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`
+    return s
+  }
+
+  const toCSV = (headers, rows) => {
+    const headerLine = headers.map(escapeCsvCell).join(',')
+    const lines = rows.map((row) => headers.map((h) => escapeCsvCell(row?.[h])).join(','))
+    return [headerLine, ...lines].join('\n')
+  }
 
   const downloadBlob = (blob, filename) => {
     const url = URL.createObjectURL(blob)
@@ -152,18 +162,6 @@ const navigateFlow = () => {
     a.click()
     a.remove()
     URL.revokeObjectURL(url)
-  }
-
-  const getFilenameFromDisposition = (contentDisposition, fallback) => {
-    if (!contentDisposition) return fallback
-
-    const match = contentDisposition.match(/filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i)
-    const encoded = match?.[1]
-    const plain = match?.[2]
-
-    if (encoded) return decodeURIComponent(encoded)
-    if (plain) return plain
-    return fallback
   }
 
   const requestExport = async (format) => {
@@ -177,27 +175,12 @@ const navigateFlow = () => {
 
     try {
       setExportMessage('Preparing download...')
-      const response = await fetch(`${BACKEND_BASE_URL}/export`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          headers: cleaned.headers,
-          rows: cleaned.rows,
-          format,
-          base_name: baseName,
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error(`Export failed with status ${response.status}`)
-      }
-
-      const blob = await response.blob()
-      const contentDisposition = response.headers.get('Content-Disposition')
-      const fallbackName = `${baseName}.${format}`
-      const filename = getFilenameFromDisposition(contentDisposition, fallbackName)
+      const timestamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')
+      const filename = `${baseName}_cleaned_${timestamp}.${format}`
+      const blob =
+        format === 'json'
+          ? new Blob([JSON.stringify(cleaned.rows, null, 2)], { type: 'application/json;charset=utf-8' })
+          : new Blob([toCSV(cleaned.headers, cleaned.rows)], { type: 'text/csv;charset=utf-8' })
 
       downloadBlob(blob, filename)
       setLastExportName(filename)
