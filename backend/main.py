@@ -9,6 +9,11 @@ import csv
 import io
 import json
 
+try:
+    from bson import ObjectId
+except Exception:
+    ObjectId = None
+
 # helper logic for cleaning and summary
 from services.cleaner import calculate_summary, apply_operations
 
@@ -89,6 +94,31 @@ async def list_jobs(limit: int = 200):
     cursor = db["jobs"].find().sort([("created_at", -1), ("_id", -1)]).limit(safe_limit)
     jobs = await cursor.to_list(length=safe_limit)
     return [_to_json_safe(job) for job in jobs]
+
+
+@app.delete("/jobs")
+async def delete_all_jobs():
+    result = await db["jobs"].delete_many({})
+    return {"deleted_count": result.deleted_count}
+
+
+@app.delete("/jobs/{job_id}")
+async def delete_job(job_id: str):
+    filters = [{"id": job_id}, {"local_id": job_id}]
+    if ObjectId is not None:
+        try:
+            filters.insert(0, {"_id": ObjectId(job_id)})
+        except Exception:
+            pass
+
+    deleted_count = 0
+    for query in filters:
+        result = await db["jobs"].delete_one(query)
+        if result.deleted_count:
+            deleted_count = result.deleted_count
+            break
+
+    return {"deleted_count": deleted_count, "job_id": job_id}
 
 
 @app.post("/export")

@@ -758,6 +758,35 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
+.table-action-btn {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--ink-0);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.table-action-btn:hover:enabled {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.table-action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.table-action-btn-danger {
+  background: rgba(255, 92, 92, 0.2);
+  color: #ffb1b1;
+  border-color: rgba(255, 92, 92, 0.35);
+}
+
+.table-action-btn-danger:hover:enabled {
+  background: rgba(255, 92, 92, 0.3);
+}
+
 .guide-row {
   display: flex;
   align-items: center;

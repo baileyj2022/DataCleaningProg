@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { createColumnHelper, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table'
 import { LoadingSpinner } from '../components/LoadingSpinner'
-import { getJobHistory } from '../api/api'
+import { clearJobHistoryEverywhere, deleteJobEverywhere, getJobHistory, getJobKey } from '../api/api'
 
 const PRIORITY_COLUMNS = ['_id', 'id', 'local_id', 'filename', 'status', 'created_at', 'rows_in', 'rows_out']
 
@@ -29,6 +29,8 @@ export function JobHistoryScreen() {
   const [jobs, setJobs] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
+  const [deletingKey, setDeletingKey] = useState('')
+  const [isClearingAll, setIsClearingAll] = useState(false)
 
   useEffect(() => {
     let ignore = false
@@ -58,15 +60,61 @@ export function JobHistoryScreen() {
   const columnHelper = useMemo(() => createColumnHelper(), [])
   const columnKeys = useMemo(() => sortColumns(jobs), [jobs])
 
+  const handleDeleteJob = useCallback(async (job) => {
+    const key = getJobKey(job)
+    if (!window.confirm('Delete this job from history?')) return
+
+    setDeletingKey(key)
+    try {
+      await deleteJobEverywhere(job)
+      setJobs((prev) => prev.filter((entry) => getJobKey(entry) !== key))
+    } finally {
+      setDeletingKey('')
+    }
+  }, [])
+
+  const handleClearAll = useCallback(async () => {
+    if (!window.confirm('Clear all job history?')) return
+
+    setIsClearingAll(true)
+    try {
+      await clearJobHistoryEverywhere()
+      setJobs([])
+    } finally {
+      setIsClearingAll(false)
+    }
+  }, [])
+
   const columns = useMemo(() => {
-    return columnKeys.map((key) =>
+    const dynamicColumns = columnKeys.map((key) =>
       columnHelper.accessor((row) => row?.[key], {
         id: key,
         header: () => key,
         cell: (info) => displayValue(info.getValue()),
       }),
     )
-  }, [columnHelper, columnKeys])
+
+    const actionColumn = columnHelper.display({
+      id: 'actions',
+      header: () => 'actions',
+      cell: (info) => {
+        const key = getJobKey(info.row.original)
+        const isDeletingThis = deletingKey === key
+        return (
+          <button
+            type="button"
+            className="table-action-btn"
+            onClick={() => handleDeleteJob(info.row.original)}
+            disabled={isDeletingThis || isClearingAll}
+          >
+            {isDeletingThis ? 'Deleting...' : 'Delete'}
+          </button>
+        )
+      },
+    })
+
+    return [...dynamicColumns, actionColumn]
+  }, [columnHelper, columnKeys, deletingKey, handleDeleteJob, isClearingAll])
 
   const table = useReactTable({
     data: jobs,
@@ -90,6 +138,16 @@ export function JobHistoryScreen() {
         <section className="panel preview">
           <div className="panel-header">
             <h2>Past Cleaning Jobs</h2>
+            {jobs.length > 0 && (
+              <button
+                type="button"
+                className="table-action-btn table-action-btn-danger"
+                onClick={handleClearAll}
+                disabled={isClearingAll || !!deletingKey}
+              >
+                {isClearingAll ? 'Clearing...' : 'Clear All'}
+              </button>
+            )}
           </div>
 
           {isLoading && <LoadingSpinner label="Loading jobs from browser/server..." fullScreen />}

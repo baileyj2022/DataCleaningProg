@@ -11,7 +11,7 @@ const normalizeJob = (job) => {
 	return { ...job }
 }
 
-const jobIdentity = (job) => {
+export const getJobKey = (job) => {
 	if (job?._id) return String(job._id)
 	if (job?.id) return String(job.id)
 	if (job?.local_id) return String(job.local_id)
@@ -55,7 +55,7 @@ export function saveBrowserJob(job) {
 	const seen = new Set()
 
 	combined.forEach((entry) => {
-		const key = jobIdentity(entry)
+		const key = getJobKey(entry)
 		if (!seen.has(key)) {
 			seen.add(key)
 			deduped.push(entry)
@@ -94,7 +94,7 @@ export async function getJobHistory(limit = 200) {
 		const deduped = []
 
 		merged.forEach((job) => {
-			const key = jobIdentity(job)
+			const key = getJobKey(job)
 			if (!seen.has(key)) {
 				seen.add(key)
 				deduped.push(job)
@@ -104,5 +104,55 @@ export async function getJobHistory(limit = 200) {
 		return deduped.slice(0, safeLimit)
 	} catch {
 		return browserJobs
+	}
+}
+
+export function deleteBrowserJob(jobOrKey) {
+	if (!canUseLocalStorage()) return
+	const key = typeof jobOrKey === 'string' ? jobOrKey : getJobKey(jobOrKey)
+	const jobs = readBrowserJobs(MAX_BROWSER_JOBS)
+	const filtered = jobs.filter((entry) => getJobKey(entry) !== key)
+	window.localStorage.setItem(BROWSER_JOBS_KEY, JSON.stringify(filtered))
+}
+
+export function clearBrowserJobs() {
+	if (!canUseLocalStorage()) return
+	window.localStorage.removeItem(BROWSER_JOBS_KEY)
+}
+
+export async function deleteBackendJob(jobId) {
+	if (!jobId) return
+	const url = new URL(`/jobs/${encodeURIComponent(String(jobId))}`, API_BASE_URL)
+	const response = await fetch(url.toString(), { method: 'DELETE' })
+	if (!response.ok) {
+		throw new Error(`Failed to delete job (${response.status})`)
+	}
+}
+
+export async function clearBackendJobs() {
+	const url = new URL('/jobs', API_BASE_URL)
+	const response = await fetch(url.toString(), { method: 'DELETE' })
+	if (!response.ok) {
+		throw new Error(`Failed to clear job history (${response.status})`)
+	}
+}
+
+export async function deleteJobEverywhere(job) {
+	deleteBrowserJob(job)
+	const backendId = job?._id || job?.id
+	if (!backendId) return
+	try {
+		await deleteBackendJob(backendId)
+	} catch {
+		// Browser history is already updated; backend can be unavailable.
+	}
+}
+
+export async function clearJobHistoryEverywhere() {
+	clearBrowserJobs()
+	try {
+		await clearBackendJobs()
+	} catch {
+		// Browser history is already cleared; backend can be unavailable.
 	}
 }
