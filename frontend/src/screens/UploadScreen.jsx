@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { calculateStats } from '../components/dataCleaning'
-import { parseCSV, parseJSON, parseExcel } from '../components/parsers'
+import { parseCSV, parseJSON, parseExcel, parseJPEG } from '../components/parsers'
 import { LoadingSpinner } from '../components/LoadingSpinner'
 
 export function UploadScreen({
@@ -41,16 +41,9 @@ export function UploadScreen({
       let parsed
 
       if (fileName.endsWith('.jpg') || fileName.endsWith('.jpeg')) {
-        setHealthScore(null)
-        setMissingColumns([])
-        setAllMissingColumns([])
-        setShowAllColumns(false)
-        setRawData({ headers: [], rows: [] })
-        setUploadMessage('Image received. Image analysis is not supported yet.')
-        setUploadLoading(false)
-        return
-      }
-      if (fileName.endsWith('.csv')) {
+        setUploadMessage('Reading text from JPEG...')
+        parsed = await parseJPEG(nextFile)
+      } else if (fileName.endsWith('.csv')) {
         const text = await nextFile.text()
         parsed = parseCSV(text)
       } else if (fileName.endsWith('.json')) {
