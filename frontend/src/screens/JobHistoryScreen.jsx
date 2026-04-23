@@ -125,7 +125,7 @@ export function JobHistoryScreen() {
   return (
     <div className="screen preview-screen">
       <div className="topbar">
-        <button className="nav-back-btn" onClick={() => navigate('/')}>
+        <button className="nav-back-btn" onClick={() => navigate('/upload')}>
           ← Back to Upload
         </button>
         <div>

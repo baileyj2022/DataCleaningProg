@@ -13,7 +13,7 @@ The Automated Data Cleaner is a web-based platform that allows businesses to upl
 - Export formats: CSV, JSON, Excel (.xlsx), PDF cleaning report
 
 ## Tech Stack
-- Frontend: React + CSS 
+- Frontend: React + Tailwind CSS + CSS
 - Data Table: TanStack Table
 - Backend: Python + FastAPI
 - Data Processing: Pandas, NumPy, OpenPyXL, rapidfuzz
@@ -22,6 +22,39 @@ The Automated Data Cleaner is a web-based platform that allows businesses to upl
 - Frontend Deploy: Vercel
 - Backend Deploy: Railway or Render
 - Version Control: GitHub
+
+## Directory Path
+```text
+DataCleaningProg/
+├── README.md
+├── frontend/
+│   ├── index.html
+│   ├── package.json
+│   ├── tailwind.config.js
+│   ├── postcss.config.js
+│   ├── src/
+│   │   ├── App.jsx
+│   │   ├── App.css
+│   │   ├── index.css
+│   │   ├── assets/
+│   │   ├── components/
+│   │   └── screens/
+│   │       ├── LandingScreen.jsx
+│   │       ├── UploadScreen.jsx
+│   │       ├── ConfigureScreen.jsx
+│   │       ├── PreviewScreen.jsx
+│   │       ├── ExportScreen.jsx
+│   │       └── JobHistoryScreen.jsx
+└── backend/
+	├── main.py
+	├── db.py
+	├── routes/
+	│   ├── clean.py
+	│   └── preview.py
+	└── services/
+		├── __init__.py
+		└── cleaner.py
+```
 
 ## Contributors
 - Ashamarie Parke - Project Manager, Full-Stack Lead

@@ -4,6 +4,7 @@ import { Toaster, toast } from 'react-hot-toast'
 import { applyLocalOperations, calculateStats } from './components/dataCleaning'
 import { saveBrowserJob } from './api/api'
 import { UploadScreen } from './screens/UploadScreen'
+import { LandingScreen } from './screens/LandingScreen'
 import { ConfigureScreen } from './screens/ConfigureScreen'
 import { PreviewScreen } from './screens/PreviewScreen'
 import { ExportScreen } from './screens/ExportScreen'
@@ -58,12 +59,12 @@ const navigate = useNavigate()
 
 const navigateFlow = () => {
   if (!selectedFile) {
-    navigate('/')
+    navigate('/upload')
     toast.error('Please upload a file first.')
     return
   }
   if (rawData.headers.length === 0 || rawData.rows.length === 0) {
-    navigate('/')
+    navigate('/upload')
     toast.error('No data loaded. Please upload a valid file first.')
     return
   }
@@ -232,8 +233,9 @@ const navigateFlow = () => {
     <div className="app">
       <Toaster position="top-right" toastOptions={{ duration: 3500 }} />
       <Routes>
+        <Route path="/" element={<LandingScreen />} />
         <Route
-          path="/"
+          path="/upload"
           element={
             <UploadScreen
               navigateFlow={navigateFlow}

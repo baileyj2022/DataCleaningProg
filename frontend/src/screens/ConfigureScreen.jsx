@@ -16,7 +16,7 @@ export function ConfigureScreen({
     return (
       <div className="screen configure-screen">
         <div className="topbar">
-          <button className="nav-back-btn" onClick={() => navigate('/')}>
+          <button className="nav-back-btn" onClick={() => navigate('/upload')}>
             ← Back to Upload
           </button>
           <div>
@@ -44,7 +44,7 @@ export function ConfigureScreen({
   return (
     <div className="screen configure-screen">
       <div className="topbar">
-        <button className="nav-back-btn" onClick={() => navigate('/')}>
+        <button className="nav-back-btn" onClick={() => navigate('/upload')}>
           ← Back to Upload
         </button>
         <div>

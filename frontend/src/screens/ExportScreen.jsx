@@ -6,9 +6,7 @@ export function ExportScreen({
   previewData,
   isExportLoading,
   exportMessage,
-  setExportMessage,
   lastExportName,
-  setLastExportName,
   handleExportCSV,
   handleExportJSON,
 }) {
@@ -113,7 +111,7 @@ export function ExportScreen({
           {isExportLoading && <LoadingSpinner label="Preparing file download..." fullScreen />}
           {exportMessage && <div className="preview-loading" style={{ marginTop: 12 }}>{exportMessage}</div>}
 
-          <button className="nav-start-over-btn" onClick={() => navigate('/')}>
+          <button className="nav-start-over-btn" onClick={() => navigate('/upload')}>
             Start Over
           </button>
         </section>
