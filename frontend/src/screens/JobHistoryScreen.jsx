@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { createColumnHelper, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table'
 import { LoadingSpinner } from '../components/LoadingSpinner'
 import { clearJobHistoryEverywhere, deleteJobEverywhere, getJobHistory, getJobKey } from '../api/api'
+import { ToneBanner, WorkflowLayout, WorkflowPanel } from '../components/WorkflowLayout'
 
 const PRIORITY_COLUMNS = ['_id', 'id', 'local_id', 'filename', 'status', 'created_at', 'rows_in', 'rows_out']
 
@@ -103,7 +104,7 @@ export function JobHistoryScreen() {
         return (
           <button
             type="button"
-            className="table-action-btn"
+            className="rounded-md border border-slate-600 bg-slate-950/70 px-3 py-1.5 text-xs font-medium text-slate-100 transition hover:border-slate-400"
             onClick={() => handleDeleteJob(info.row.original)}
             disabled={isDeletingThis || isClearingAll}
           >
@@ -123,59 +124,58 @@ export function JobHistoryScreen() {
   })
 
   return (
-    <div className="screen preview-screen">
-      <div className="topbar">
-        <button className="nav-back-btn" onClick={() => navigate('/upload')}>
-          ← Back to Upload
-        </button>
-        <div>
-          <p className="eyebrow">Automated Data Cleaner</p>
-          <h1>Job History</h1>
-        </div>
-      </div>
-
-      <main className="preview-main">
-        <section className="panel preview">
-          <div className="panel-header">
-            <h2>Past Cleaning Jobs</h2>
-            {jobs.length > 0 && (
+    <WorkflowLayout title="Job History" backLabel="Back to Upload" onBack={() => navigate('/upload')}>
+      <div className="mt-10">
+        <WorkflowPanel
+          title="Past Cleaning Jobs"
+          action={
+            jobs.length > 0 && (
               <button
                 type="button"
-                className="table-action-btn table-action-btn-danger"
+                className="rounded-lg border border-rose-300/35 bg-rose-500/10 px-3 py-2 text-sm font-medium text-rose-100 transition hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-60"
                 onClick={handleClearAll}
                 disabled={isClearingAll || !!deletingKey}
               >
                 {isClearingAll ? 'Clearing...' : 'Clear All'}
               </button>
-            )}
-          </div>
-
+            )
+          }
+        >
           {isLoading && <LoadingSpinner label="Loading jobs from browser/server..." fullScreen />}
-          {!isLoading && error && <div className="preview-error">{error}</div>}
-          {!isLoading && !error && jobs.length === 0 && <p className="no-data-notice">No jobs found yet.</p>}
+          {!isLoading && error && <ToneBanner tone="error">{error}</ToneBanner>}
+          {!isLoading && !error && jobs.length === 0 && (
+            <ToneBanner tone="warning">No jobs found yet.</ToneBanner>
+          )}
           {!isLoading && !error && jobs.length > 0 && (
-            <div className="preview-success">
+            <ToneBanner tone="success">
               Showing {jobs.length} job{jobs.length !== 1 ? 's' : ''}
-            </div>
+            </ToneBanner>
           )}
 
           {!isLoading && !error && jobs.length > 0 && (
-            <div className="table-container">
-              <table className="preview-table">
+            <div className="mt-4 max-h-[520px] overflow-auto rounded-xl border border-slate-700/80">
+              <table className="min-w-full border-collapse text-sm">
                 <thead>
                   {table.getHeaderGroups().map((headerGroup) => (
-                    <tr key={headerGroup.id}>
+                    <tr key={headerGroup.id} className="bg-slate-900/95">
                       {headerGroup.headers.map((header) => (
-                        <th key={header.id}>{flexRender(header.column.columnDef.header, header.getContext())}</th>
+                        <th
+                          key={header.id}
+                          className="sticky top-0 border-b border-slate-700 px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.04em] text-slate-300"
+                        >
+                          {flexRender(header.column.columnDef.header, header.getContext())}
+                        </th>
                       ))}
                     </tr>
                   ))}
                 </thead>
                 <tbody>
                   {table.getRowModel().rows.map((row) => (
-                    <tr key={row.id}>
+                    <tr key={row.id} className="border-b border-slate-800/80">
                       {row.getVisibleCells().map((cell) => (
-                        <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
+                        <td key={cell.id} className="px-3 py-2 text-slate-100">
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </td>
                       ))}
                     </tr>
                   ))}
@@ -183,8 +183,8 @@ export function JobHistoryScreen() {
               </table>
             </div>
           )}
-        </section>
-      </main>
-    </div>
+        </WorkflowPanel>
+      </div>
+    </WorkflowLayout>
   )
 }

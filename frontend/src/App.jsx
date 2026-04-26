@@ -9,7 +9,6 @@ import { ConfigureScreen } from './screens/ConfigureScreen'
 import { PreviewScreen } from './screens/PreviewScreen'
 import { ExportScreen } from './screens/ExportScreen'
 import { JobHistoryScreen } from './screens/JobHistoryScreen'
-import './App.css'
 
 function App() {
   const [isDragOver, setIsDragOver] = useState(false)
@@ -230,7 +229,7 @@ const navigateFlow = () => {
   // Add a loading spinner to every screen that makes an API call so the user knows when processing
   
   return (
-    <div className="app">
+    <div className="min-h-screen">
       <Toaster position="top-right" toastOptions={{ duration: 3500 }} />
       <Routes>
         <Route path="/" element={<LandingScreen />} />

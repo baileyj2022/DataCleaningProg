@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { calculateStats } from '../components/dataCleaning'
 import { parseCSV, parseJSON, parseExcel, parseJPEG } from '../components/parsers'
 import { LoadingSpinner } from '../components/LoadingSpinner'
+import { ToneBanner, WorkflowLayout, WorkflowPanel } from '../components/WorkflowLayout'
 
 export function UploadScreen({
   selectedFile,
@@ -107,51 +108,63 @@ export function UploadScreen({
   }
 
   return (
-    <div className="screen upload-screen">
-      <div className="topbar">
-        <div>
-          <p className="eyebrow">For Businesses with "Messy" Data</p>
-          <h1>Automated Data Cleaner</h1>
-        </div>
-        <button className="nav-back-btn topbar-action" onClick={() => navigate('/jobs')}>
+    <WorkflowLayout
+      title="Automated Data Cleaner"
+      eyebrow="For Businesses with Messy Data"
+      rightAction={
+        <button
+          type="button"
+          className="rounded-lg border border-slate-700 bg-slate-900/70 px-4 py-2 text-sm font-medium text-slate-100 transition hover:border-sky-300 hover:text-sky-200"
+          onClick={() => navigate('/jobs')}
+        >
           View Job History
         </button>
-      </div>
-
-      <main className="upload-main">
-        <section className="panel ingestion">
-          <div className="panel-header">
-            <h2>Data Ingestion</h2>
-          </div>
+      }
+      contentClassName="mt-10 flex justify-center"
+    >
+      <WorkflowPanel title="Data Ingestion" className="w-full max-w-2xl">
+        <div
+          className={`relative grid gap-2 rounded-2xl border border-dashed p-7 text-center transition ${
+            isDragOver
+              ? 'border-sky-300/70 bg-sky-500/15'
+              : 'border-slate-600/70 bg-slate-950/50 hover:border-slate-500 hover:bg-slate-900/60'
+          }`}
+          onDrop={onDrop}
+          onDragOver={onDragOver}
+          onDragLeave={onDragLeave}
+          role="button"
+          tabIndex={0}
+        >
           <div
-            className={`dropzone ${isDragOver ? 'is-active' : ''}`}
-            onDrop={onDrop}
-            onDragOver={onDragOver}
-            onDragLeave={onDragLeave}
-            role="button"
-            tabIndex={0}
+            className="mx-auto grid h-14 w-14 place-items-center rounded-2xl border border-slate-600 bg-slate-900/60"
+            aria-hidden="true"
           >
-            <div className="dropzone-icon" aria-hidden="true">
-              <span />
-            </div>
-            <p>Drag & Drop your CSV/ JSON/ Excel/ JPEG files here</p>
-            <span>or Browse Files on Your Device</span>
-            <input
-              type="file"
-              accept=".csv,.json,.xlsx,.xls,.jpg,.jpeg"
-              onChange={(event) => handleFiles(event.target.files)}
-              disabled={uploadLoading}
-            />
+            <span className="grid h-8 w-6 place-items-center rounded-md border-2 border-slate-300 text-slate-200">+</span>
           </div>
-          <div className="file-meta">
-            <p>{selectedFile ? selectedFile.name : 'No file selected'}</p>
-            <span>{selectedFile ? `${Math.round(selectedFile.size / 1024)} KB` : 'Waiting for upload'}</span>
-          </div>
-          {uploadMessage && <p className="file-note">{uploadMessage}</p>}
-          {uploadLoading && <LoadingSpinner label="Processing file..." fullScreen />}
-          {uploadError && <div className="upload-error">{uploadError}</div>}
-        </section>
-      </main>
-    </div>
+          <p className="text-base font-medium text-slate-100">Drag and drop CSV, JSON, Excel, or JPEG files here</p>
+          <span className="text-sm text-slate-400">or browse files on your device</span>
+          <input
+            type="file"
+            accept=".csv,.json,.xlsx,.xls,.jpg,.jpeg"
+            onChange={(event) => handleFiles(event.target.files)}
+            disabled={uploadLoading}
+            className="absolute inset-0 cursor-pointer opacity-0"
+          />
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-800 bg-slate-950/70 px-4 py-3 text-sm text-slate-300">
+          <p className="truncate font-medium text-slate-100">{selectedFile ? selectedFile.name : 'No file selected'}</p>
+          <span>{selectedFile ? `${Math.round(selectedFile.size / 1024)} KB` : 'Waiting for upload'}</span>
+        </div>
+
+        {uploadMessage && <p className="mt-3 text-sm text-slate-300">{uploadMessage}</p>}
+        {uploadLoading && <LoadingSpinner label="Processing file..." fullScreen />}
+        {uploadError && (
+          <ToneBanner tone="error" className="mt-4">
+            {uploadError}
+          </ToneBanner>
+        )}
+      </WorkflowPanel>
+    </WorkflowLayout>
   )
 }
