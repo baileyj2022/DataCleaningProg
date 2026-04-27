@@ -1,14 +1,13 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { LoadingSpinner } from '../components/LoadingSpinner'
+import { ToneBanner, WorkflowLayout, WorkflowPanel } from '../components/WorkflowLayout'
 
 export function ExportScreen({
   previewData,
   isExportLoading,
   exportMessage,
-  setExportMessage,
   lastExportName,
-  setLastExportName,
   handleExportCSV,
   handleExportJSON,
 }) {
@@ -25,68 +24,46 @@ export function ExportScreen({
 
   if (!previewData?.rows?.length) {
     return (
-      <div className="screen export-screen">
-        <div className="topbar">
-          <button className="nav-back-btn" onClick={() => navigate('/preview')}>
-            ← Back to Preview
-          </button>
-          <div>
-            <p className="eyebrow">Automated Data Cleaner</p>
-            <h1>Export Results</h1>
-          </div>
-        </div>
-        <main className="export-main">
-          <p className="no-data-notice">No data to export. Please go back and generate a preview.</p>
-        </main>
-      </div>
+      <WorkflowLayout title="Export Results" backLabel="Back to Preview" onBack={() => navigate('/preview')}>
+        <ToneBanner tone="error" className="mt-6">
+          No data to export. Please go back and generate a preview.
+        </ToneBanner>
+      </WorkflowLayout>
     )
   }
 
   return (
-    <div className="screen export-screen">
-      <div className="topbar">
-        <button className="nav-back-btn" onClick={() => navigate('/preview')}>
-          ← Back to Preview
-        </button>
-        <div>
-          <p className="eyebrow">Automated Data Cleaner</p>
-          <h1>Export Results</h1>
-        </div>
-      </div>
+    <WorkflowLayout title="Export Results" backLabel="Back to Preview" onBack={() => navigate('/preview')}>
+      <div className="mt-10 max-w-3xl">
+        <WorkflowPanel title="Export Cleaned File">
+          <span className="inline-flex rounded-full border border-slate-600 bg-slate-900/70 px-3 py-1 text-xs text-slate-200">
+            Cleaned dataset is ready for export. Choose your preferred format below.
+          </span>
 
-      <main className="export-main">
-        <section className="panel preview">
-          <div className="panel-header">
-            <h2>Export Cleaned File</h2>
-            <span className="badge">Cleaned dataset is ready for export. Choose your preferred format below.</span>
-          </div>
-
-          <p className="subtle">
+          <p className="mt-4 text-sm text-slate-300">
             Download your cleaned dataset as a modern export file. CSV is widely compatible, while JSON preserves
-            complex structures. The exported file will include all applied cleaning operations and a timestamp in the
-            filename for easy reference.
+            complex structures. The exported file includes all applied cleaning operations and a timestamp in the
+            filename.
           </p>
 
-          <div className="chip-grid">
-            <div className="chip chip-blue">
-              <strong>Rows</strong>
-              <span>{previewData?.rows?.length}</span>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-xl border border-sky-300/40 bg-sky-500/10 px-4 py-3">
+              <strong className="block text-sm text-sky-100">Rows</strong>
+              <span className="text-sm text-slate-200">{previewData?.rows?.length}</span>
             </div>
-
-            <div className="chip chip-green">
-              <strong>Columns</strong>
-              <span>{previewData?.headers?.length}</span>
+            <div className="rounded-xl border border-emerald-300/40 bg-emerald-500/10 px-4 py-3">
+              <strong className="block text-sm text-emerald-100">Columns</strong>
+              <span className="text-sm text-slate-200">{previewData?.headers?.length}</span>
             </div>
-
-            <div className="chip chip-amber">
-              <strong>Operations</strong>
-              <span>{previewData?.operations_applied?.length || 0}</span>
+            <div className="rounded-xl border border-amber-300/40 bg-amber-500/10 px-4 py-3">
+              <strong className="block text-sm text-amber-100">Operations</strong>
+              <span className="text-sm text-slate-200">{previewData?.operations_applied?.length || 0}</span>
             </div>
           </div>
 
-          <div className="export-actions" style={{ marginTop: 16 }}>
+          <div className="mt-4 flex flex-wrap gap-3">
             <select
-              className="export-button"
+              className="rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-sky-300"
               value={selectedFormat}
               onChange={(e) => setSelectedFormat(e.target.value)}
               aria-label="Select export format"
@@ -96,28 +73,38 @@ export function ExportScreen({
               <option value="json">JSON (.json)</option>
             </select>
 
-            <button className="export-button" onClick={handleDownload} disabled={isExportLoading}>
+            <button
+              type="button"
+              className="rounded-lg bg-sky-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-60"
+              onClick={handleDownload}
+              disabled={isExportLoading}
+            >
               {isExportLoading ? 'Preparing...' : 'Download'}
             </button>
 
             {lastExportName && (
-              <div
-                className="toast"
+              <button
+                type="button"
+                className="rounded-lg border border-slate-700 bg-slate-950/70 px-4 py-2 text-sm text-slate-200 transition hover:border-slate-500"
                 onClick={() => navigator.clipboard?.writeText(lastExportName)}
               >
-                Saved: <strong style={{ marginLeft: 6 }}>{lastExportName}</strong>
-              </div>
+                Saved: {lastExportName}
+              </button>
             )}
           </div>
 
           {isExportLoading && <LoadingSpinner label="Preparing file download..." fullScreen />}
-          {exportMessage && <div className="preview-loading" style={{ marginTop: 12 }}>{exportMessage}</div>}
+          {exportMessage && <ToneBanner className="mt-4">{exportMessage}</ToneBanner>}
 
-          <button className="nav-start-over-btn" onClick={() => navigate('/')}>
+          <button
+            type="button"
+            className="mt-4 rounded-lg border border-slate-700 bg-slate-900/70 px-4 py-2 text-sm font-medium text-slate-100 transition hover:border-sky-300 hover:text-sky-200"
+            onClick={() => navigate('/upload')}
+          >
             Start Over
           </button>
-        </section>
-      </main>
-    </div>
+        </WorkflowPanel>
+      </div>
+    </WorkflowLayout>
   )
 }

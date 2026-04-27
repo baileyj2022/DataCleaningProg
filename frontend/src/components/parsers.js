@@ -1,4 +1,5 @@
 import ExcelJS from 'exceljs'
+import Tesseract from 'tesseract.js'
 
 // Robust CSV parser (handles quoted commas/newlines + escaped quotes)
 export function parseCSV(text) {
@@ -131,6 +132,63 @@ export async function parseExcel(arrayBuffer) {
 
   if (!rows.length) {
     throw new Error('Excel file is empty or has no usable rows.')
+  }
+
+  return { headers, rows }
+}
+
+const splitOcrLine = (line) =>
+  line
+    .split(/\s{2,}|\t+|\s*\|\s*|,\s*/)
+    .map((part) => part.trim())
+    .filter(Boolean)
+
+export async function parseJPEG(file) {
+  const result = await Tesseract.recognize(file, 'eng')
+  const lines = String(result?.data?.text ?? '')
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+
+  if (!lines.length) {
+    throw new Error('No readable text found in the JPEG image.')
+  }
+
+  const tokenizedLines = lines.map(splitOcrLine).filter((tokens) => tokens.length > 0)
+  const hasMultiColumnRows = tokenizedLines.some((tokens) => tokens.length > 1)
+
+  if (!hasMultiColumnRows) {
+    return {
+      headers: ['text'],
+      rows: lines.map((line) => ({ text: line })),
+    }
+  }
+
+  const maxColumns = Math.max(...tokenizedLines.map((tokens) => tokens.length))
+  const headerTokens = tokenizedLines[0]
+  const headers = Array.from({ length: maxColumns }, (_, index) => headerTokens[index] || `Column ${index + 1}`)
+  const rows = tokenizedLines.slice(1).map((tokens) => {
+    const row = {}
+
+    headers.forEach((header, index) => {
+      row[header] = tokens[index] === undefined || tokens[index] === '' ? null : tokens[index]
+    })
+
+    return row
+  })
+
+  if (!rows.length) {
+    return {
+      headers,
+      rows: [
+        headers.reduce((row, header, index) => {
+          row[header] = headerTokens[index] || null
+          return row
+        }, {}),
+      ],
+    }
   }
 
   return { headers, rows }

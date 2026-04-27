@@ -4,11 +4,11 @@ import { Toaster, toast } from 'react-hot-toast'
 import { applyLocalOperations, calculateStats } from './components/dataCleaning'
 import { saveBrowserJob } from './api/api'
 import { UploadScreen } from './screens/UploadScreen'
+import { LandingScreen } from './screens/LandingScreen'
 import { ConfigureScreen } from './screens/ConfigureScreen'
 import { PreviewScreen } from './screens/PreviewScreen'
 import { ExportScreen } from './screens/ExportScreen'
 import { JobHistoryScreen } from './screens/JobHistoryScreen'
-import './App.css'
 
 function App() {
   const [isDragOver, setIsDragOver] = useState(false)
@@ -58,12 +58,12 @@ const navigate = useNavigate()
 
 const navigateFlow = () => {
   if (!selectedFile) {
-    navigate('/')
+    navigate('/upload')
     toast.error('Please upload a file first.')
     return
   }
   if (rawData.headers.length === 0 || rawData.rows.length === 0) {
-    navigate('/')
+    navigate('/upload')
     toast.error('No data loaded. Please upload a valid file first.')
     return
   }
@@ -229,11 +229,12 @@ const navigateFlow = () => {
   // Add a loading spinner to every screen that makes an API call so the user knows when processing
   
   return (
-    <div className="app">
+    <div className="min-h-screen">
       <Toaster position="top-right" toastOptions={{ duration: 3500 }} />
       <Routes>
+        <Route path="/" element={<LandingScreen />} />
         <Route
-          path="/"
+          path="/upload"
           element={
             <UploadScreen
               navigateFlow={navigateFlow}
