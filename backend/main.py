@@ -1,32 +1,27 @@
 from fastapi import FastAPI
 from fastapi.responses import Response
 from fastapi.middleware.cors import CORSMiddleware
-from db import db
-<<<<<<< HEAD
 from pydantic import BaseModel
 from typing import List, Dict, Any
 from datetime import datetime
 import csv
 import io
 import json
+from db import db
+from routes.preview import router as preview_router
+from routes.clean import router as clean_router
+from routes.upload import router as upload_router
+from services.cleaner import calculate_summary, apply_operations
 
 try:
     from bson import ObjectId
 except Exception:
     ObjectId = None
 
-# helper logic for cleaning and summary
-from services.cleaner import calculate_summary, apply_operations
-=======
-from routes.preview import router as preview_router
-from routes.clean import router as clean_router
-
-
->>>>>>> 19f8904 (Created the Export Endpoint)
-
 app = FastAPI()
 app.include_router(preview_router)
-app.include_router(clean_router) 
+app.include_router(clean_router)
+app.include_router(upload_router)
 
 app.add_middleware(
     CORSMiddleware,
