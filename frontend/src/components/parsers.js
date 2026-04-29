@@ -157,9 +157,15 @@ export async function parseJPEG(file) {
   }
 
   const tokenizedLines = lines.map(splitOcrLine).filter((tokens) => tokens.length > 0)
-  const hasMultiColumnRows = tokenizedLines.some((tokens) => tokens.length > 1)
 
-  if (!hasMultiColumnRows) {
+  // Require at least 3 rows with 2+ columns (header + 2 data rows) to be confident it's a table
+  const multiColumnRows = tokenizedLines.filter((tokens) => tokens.length >= 2)
+  if (multiColumnRows.length < 3) {
+    throw new Error('No tabular data found in this image. Please upload an image containing a data table.')
+  }
+
+  // Require the first row to be multi-column (it should be the header)
+  if (tokenizedLines[0].length < 2) {
     throw new Error('No tabular data found in this image. Please upload an image containing a data table.')
   }
 
