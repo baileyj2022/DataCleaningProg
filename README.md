@@ -27,33 +27,54 @@ The Automated Data Cleaner is a web-based platform that allows businesses to upl
 ```text
 DataCleaningProg/
 ├── README.md
+├── package.json
+├── package-lock.json
 ├── frontend/
 │   ├── index.html
 │   ├── package.json
-│   ├── tailwind.config.js
+│   ├── package-lock.json
 │   ├── postcss.config.js
-│   ├── src/
-│   │   ├── App.jsx
-│   │   ├── App.css
-│   │   ├── index.css
-│   │   ├── assets/
-│   │   ├── components/
-│   │   └── screens/
-│   │       ├── LandingScreen.jsx
-│   │       ├── UploadScreen.jsx
-│   │       ├── ConfigureScreen.jsx
-│   │       ├── PreviewScreen.jsx
-│   │       ├── ExportScreen.jsx
-│   │       └── JobHistoryScreen.jsx
+│   ├── tailwind.config.js
+│   ├── vite.config.js
+│   ├── vercel.json
+│   └── src/
+│       ├── App.jsx
+│       ├── App.css
+│       ├── index.css
+│       ├── main.jsx
+│       ├── api/
+│       ├── assets/
+│       │   └── adc_logo.PNG
+│       ├── components/
+│       │   ├── LoadingSpinner.jsx
+│       │   ├── WorkflowLayout.jsx
+│       │   ├── dataCleaning.jsx
+│       │   └── parsers.js
+│       └── screens/
+│           ├── ConfigureScreen.jsx
+│           ├── ExportScreen.jsx
+│           ├── JobHistoryScreen.jsx
+│           ├── LandingScreen.jsx
+│           ├── PreviewScreen.jsx
+│           └── UploadScreen.jsx
 └── backend/
-	├── main.py
+	├── .env.example
+	├── API_ENDPOINTS.md
 	├── db.py
+	├── main.py
+	├── render.yaml
+	├── requirements.txt
 	├── routes/
 	│   ├── clean.py
-	│   └── preview.py
+	│   ├── export.py
+	│   ├── jobs.py
+	│   ├── preview.py
+	│   └── upload.py
 	└── services/
 		├── __init__.py
-		└── cleaner.py
+		├── cleaner.py
+		├── exporter.py
+		└── validator.py
 ```
 
 ## Contributors
