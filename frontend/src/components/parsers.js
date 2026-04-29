@@ -158,15 +158,24 @@ export async function parseJPEG(file) {
 
   const tokenizedLines = lines.map(splitOcrLine).filter((tokens) => tokens.length > 0)
 
-  // Require at least 3 rows with 2+ columns (header + 2 data rows) to be confident it's a table
-  const multiColumnRows = tokenizedLines.filter((tokens) => tokens.length >= 2)
-  if (multiColumnRows.length < 3) {
-    throw new Error('No tabular data found in this image. Please upload an image containing a data table.')
+  const TABLE_ERROR = 'No tabular data found in this image. Please upload an image containing a data table.'
+
+  // Header row must have at least 2 columns
+  if (!tokenizedLines.length || tokenizedLines[0].length < 2) {
+    throw new Error(TABLE_ERROR)
   }
 
-  // Require the first row to be multi-column (it should be the header)
-  if (tokenizedLines[0].length < 2) {
-    throw new Error('No tabular data found in this image. Please upload an image containing a data table.')
+  // Need at least 3 rows with 2+ columns (header + 2 data rows)
+  const multiColumnRows = tokenizedLines.filter((tokens) => tokens.length >= 2)
+  if (multiColumnRows.length < 3) {
+    throw new Error(TABLE_ERROR)
+  }
+
+  // Real tables have consistent column counts — require 60%+ of rows to match the header count (±1)
+  const expectedCols = tokenizedLines[0].length
+  const consistentRows = tokenizedLines.filter((tokens) => Math.abs(tokens.length - expectedCols) <= 1)
+  if (consistentRows.length / tokenizedLines.length < 0.6) {
+    throw new Error(TABLE_ERROR)
   }
 
   const maxColumns = Math.max(...tokenizedLines.map((tokens) => tokens.length))
