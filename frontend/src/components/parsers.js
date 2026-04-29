@@ -160,10 +160,7 @@ export async function parseJPEG(file) {
   const hasMultiColumnRows = tokenizedLines.some((tokens) => tokens.length > 1)
 
   if (!hasMultiColumnRows) {
-    return {
-      headers: ['text'],
-      rows: lines.map((line) => ({ text: line })),
-    }
+    throw new Error('No tabular data found in this image. Please upload an image containing a data table.')
   }
 
   const maxColumns = Math.max(...tokenizedLines.map((tokens) => tokens.length))
@@ -180,15 +177,7 @@ export async function parseJPEG(file) {
   })
 
   if (!rows.length) {
-    return {
-      headers,
-      rows: [
-        headers.reduce((row, header, index) => {
-          row[header] = headerTokens[index] || null
-          return row
-        }, {}),
-      ],
-    }
+    throw new Error('No tabular data found in this image. Please upload an image containing a data table.')
   }
 
   return { headers, rows }
