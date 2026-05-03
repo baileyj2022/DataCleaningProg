@@ -138,10 +138,10 @@ DataCleaningProg/
 
 ## Contributors
 - Ashamarie Parke (Z23723840, parkea2023@fau.edu) - Project Manager, Full-Stack Lead
-- Jemima Gay ( ,jgay2022@fau.edu)- Project Manager, Backend Developer
-- Francesca Dumary ( ,fdumary2024@fau.edu) - Frontend Developer, DevOps
-- Jolie Bailey( , baileyj2022@fau.edu) - DevOps, Data/ML Specialist
-- Denia Rosiclair( ,drosiclair2022@fau.edu) - Backend Developer, Data/ML Specialist
+- Jemima Gay (Z23668708 ,jgay2022@fau.edu)- Project Manager, Backend Developer
+- Francesca Dumary (Z23757509,fdumary2024@fau.edu) - Frontend Developer, DevOps
+- Jolie Bailey(Z23670110 , baileyj2022@fau.edu) - DevOps, Data/ML Specialist
+- Denia Rosiclair(Z23651348 ,drosiclair2022@fau.edu) - Backend Developer, Data/ML Specialist
 
 ## Project Poster 
 ![Project poster showing features and team information](Project_Poster.png)
