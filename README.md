@@ -1,7 +1,6 @@
 <img width="288.5" height="281" alt="Automated Data Cleaner logo with sparkle icon" src="https://github.com/user-attachments/assets/3e73147c-8c35-471c-9802-ce97b7b1290c" />
 
 # Automated Data Cleaner
-Website: https://data-cleaning-prog.vercel.app/
 
 ## Overview
 The Automated Data Cleaner is a web-based platform that allows businesses to upload, clean, and export datasets without requiring technical expertise. Users can upload dirty datasets, configure cleaning operations through a simple interface, preview changes, and download cleaned data in multiple formats.
@@ -134,14 +133,12 @@ DataCleaningProg/
   - `exporter.py` - formats cleaned data for download.
   - `validator.py` - checks incoming files and data before processing.
 
-
-
 ## Contributors
 - Ashamarie Parke (Z23723840, parkea2023@fau.edu) - Project Manager, Full-Stack Lead
-- Jemima Gay (Z23668708 ,jgay2022@fau.edu)- Project Manager, Backend Developer
-- Francesca Dumary (Z23757509,fdumary2024@fau.edu) - Frontend Developer, DevOps
-- Jolie Bailey(Z23670110 , baileyj2022@fau.edu) - DevOps, Data/ML Specialist
-- Denia Rosiclair(Z23651348 ,drosiclair2022@fau.edu) - Backend Developer, Data/ML Specialist
+- Jemima Gay (Z23668708, jgay2022@fau.edu)- Project Manager, Backend Developer
+- Francesca Dumary (Z23757509, fdumary2024@fau.edu) - Frontend Developer, DevOps
+- Jolie Bailey (Z23670110, baileyj2022@fau.edu) - DevOps, Data/ML Specialist
+- Denia Rosiclair (Z23651348, drosiclair2022@fau.edu) - Backend Developer, Data/ML Specialist
 
 ## Project Poster 
 ![Project poster showing features and team information](Project_Poster.png)
