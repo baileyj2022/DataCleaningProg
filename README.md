@@ -143,8 +143,6 @@ DataCleaningProg/
 ## Project Poster 
 ![Project poster showing features and team information](Project_Poster.png)
 
-## Youtube Link for Demo
-[Watch Demo on YouTube](https://youtu.be/meuvNWGcZ9c)
 
 ## How to Run
 **Frontend only** (client-side cleaning, no backend needed)
